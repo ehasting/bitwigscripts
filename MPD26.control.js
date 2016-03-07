@@ -2,39 +2,52 @@
 Copyright (c) 2016, Egil Hasting
 All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-1. Redistributions of source code must retain the above copyright notice, this 
+1. Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
 
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation and/or 
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or
 other materials provided with the distribution.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-// A short controller script for mapping mpd26 to bitwig.  
+// A short controller script for mapping mpd26 to bitwig.
+// Using the default "Live" - preset which is located on preset slot 1
 // K1-K6 is mapped to macro1 - macro6
 // Transport controllers is mapped to its equalents in bitwig
 //
 // TODO: Make a better forward/rewind. Make it response to holding down button.
+var DEBUG = false;
+
+// Wrapped print to be able to toggle on/off debug
+function p(text)
+{
+    if (DEBUG)
+    {
+        println(text);
+    }
+}
+
 loadAPI(1);
 host.defineController("Akai", "MPD26", "1.0", "9367ce97-9ac6-4e4a-96dc-318cdca19781", "Egil Hasting");
 host.defineMidiPorts(1, 1);
 host.addDeviceNameBasedDiscoveryPair(
     ["Akai MPD26"], ["Akai MPD26"]);
 host.addDeviceNameBasedDiscoveryPair(
-    ["Akai MPD26 MIDI 1"], ["Akai MPD26 MIDI 1"]);
+    ["MIDIIN2 (Akai MPD26)"], ["MIDIOUT2 (Akai MPD26)"]);
+
 var LOWEST_CC = 1;
 var HIGHEST_CC = 127;
 var transport = undefined;
@@ -117,6 +130,7 @@ function controlmacro(macroid, controllerobject, valuedec) {
 }
 
 function onSysex(data) {
+  p("Sysex: " + data);
     // Used for detectiD MMC
     switch (data) {
         // Push buttons
@@ -169,7 +183,7 @@ function onSysex(data) {
 }
 
 function onMidi(status, data1, data2) {
-    //println(status + " " + data1 + " " + data2);
+    p("Midi: " + data1);
     if (isChannelController(status)) {
         if (data1 >= LOWEST_CC && data1 <= HIGHEST_CC) {
             var index = data1 - LOWEST_CC;
@@ -181,6 +195,7 @@ function onMidi(status, data1, data2) {
 
 // START MAIN
 function init() {
+    println(+ Date.now() +" Starting")
     transport = host.createTransport();
     cursordevice = host.createCursorDevice();
     var AKAI = host.getMidiInPort(0).createNoteInput("Pads", "??????");
