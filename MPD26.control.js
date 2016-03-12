@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Transport controllers is mapped to its equalents in bitwig
 //
 // TODO: Make a better forward/rewind. Make it response to holding down button.
-var DEBUG = true;
+var DEBUG = false;
 
 // Wrapped print to be able to toggle on/off debug
 function p(text)
