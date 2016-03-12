@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Transport controllers is mapped to its equalents in bitwig
 //
 // TODO: Make a better forward/rewind. Make it response to holding down button.
-var DEBUG = false;
+var DEBUG = true;
 
 // Wrapped print to be able to toggle on/off debug
 function p(text)
@@ -76,31 +76,25 @@ Statebank.F5 = new Statevalues();
 Statebank.F6 = new Statevalues();
 
 function MPD26Constants() {}
-MPD26Constants.SYSEX_END = "f7";
-MPD26Constants.MMC_SYSEXHEADER = "f04700784000021";
-MPD26Constants.PLAY_D = MPD26Constants.MMC_SYSEXHEADER + "301f7";
-MPD26Constants.PLAY_U = MPD26Constants.MMC_SYSEXHEADER + "300f7";
-MPD26Constants.STOP_D = MPD26Constants.MMC_SYSEXHEADER + "201f7";
-MPD26Constants.STOP_U = MPD26Constants.MMC_SYSEXHEADER + "200f7";
-MPD26Constants.FFW_D = MPD26Constants.MMC_SYSEXHEADER + "101f7";
-MPD26Constants.FFW_U = MPD26Constants.MMC_SYSEXHEADER + "100f7";
-MPD26Constants.FBW_D = MPD26Constants.MMC_SYSEXHEADER + "001f7";
-MPD26Constants.FBW_U = MPD26Constants.MMC_SYSEXHEADER + "000f7";
-MPD26Constants.REC_D = MPD26Constants.MMC_SYSEXHEADER + "401f7";
-MPD26Constants.REC_U = MPD26Constants.MMC_SYSEXHEADER + "400f7";
-MPD26Constants.CC_SYSEXHEADER = "f04700784100020";
-MPD26Constants.K1 = MPD26Constants.CC_SYSEXHEADER + "0";
-MPD26Constants.K2 = MPD26Constants.CC_SYSEXHEADER + "1";
-MPD26Constants.K3 = MPD26Constants.CC_SYSEXHEADER + "2";
-MPD26Constants.K4 = MPD26Constants.CC_SYSEXHEADER + "3";
-MPD26Constants.K5 = MPD26Constants.CC_SYSEXHEADER + "4";
-MPD26Constants.K6 = MPD26Constants.CC_SYSEXHEADER + "5";
-MPD26Constants.F1 = MPD26Constants.CC_SYSEXHEADER + "6";
-MPD26Constants.F2 = MPD26Constants.CC_SYSEXHEADER + "7";
-MPD26Constants.F3 = MPD26Constants.CC_SYSEXHEADER + "8";
-MPD26Constants.F4 = MPD26Constants.CC_SYSEXHEADER + "9";
-MPD26Constants.F5 = MPD26Constants.CC_SYSEXHEADER + "a";
-MPD26Constants.F6 = MPD26Constants.CC_SYSEXHEADER + "b";
+MPD26Constants.SYSEX_MMC_HEADER = "f07f7f06";
+MPD26Constants.SYSEX_END ="f7";
+MPD26Constants.PLAY_D = MPD26Constants.SYSEX_MMC_HEADER + "02" + MPD26Constants.SYSEX_END;
+MPD26Constants.STOP_D = MPD26Constants.SYSEX_MMC_HEADER + "01" + MPD26Constants.SYSEX_END;
+MPD26Constants.FFW_D = MPD26Constants.SYSEX_MMC_HEADER + "04" + MPD26Constants.SYSEX_END;
+MPD26Constants.FBW_D = MPD26Constants.SYSEX_MMC_HEADER + "05" + MPD26Constants.SYSEX_END;
+MPD26Constants.REC_D = MPD26Constants.SYSEX_MMC_HEADER + "06" + MPD26Constants.SYSEX_END;
+MPD26Constants.K1 = 3;
+MPD26Constants.K2 = 9;
+MPD26Constants.K3 = 14;
+MPD26Constants.K4 = 15;
+MPD26Constants.K5 = 16;
+MPD26Constants.K6 = 17;
+MPD26Constants.F1 = 20;
+MPD26Constants.F2 = 21;
+MPD26Constants.F3 = 22;
+MPD26Constants.F4 = 23
+MPD26Constants.F5 = 24;
+MPD26Constants.F6 = 25;
 // END Constants
 
 
@@ -115,48 +109,42 @@ function generateStepValue(deviceTimestamp) {
 }
 
 function controlmacro(macroid, controllerobject, valuedec) {
-    stepvalue = generateStepValue(controllerobject.Timestamp);
-    if (controllerobject.LastValue >= valuedec) {
-        for (i = 0; i < stepvalue; i++) {
-            cursordevice.getMacro(macroid).getAmount().inc(-1, 128);
-        }
-    } else {
-        for (i = 0; i < stepvalue; i++) {
-            cursordevice.getMacro(macroid).getAmount().inc(1, 128);
-        }
-    }
-    controllerobject.LastValue = valuedec;
-    controllerobject.Timestamp = Date.now();
+        cursordevice.getMacro(macroid).getAmount().set(valuedec, 128);
+
 }
 
 function onSysex(data) {
-  p("Sysex: " + data);
-    // Used for detectiD MMC
-    switch (data) {
-        // Push buttons
-        case MPD26Constants.PLAY_D:
-            transport.play();
-            break;
-        case MPD26Constants.STOP_D:
-            transport.stop();
-            break;
-        case MPD26Constants.FFW_D:
-            transport.fastForward();
-            break;
-        case MPD26Constants.FBW_D:
-            transport.rewind();
-            break;
-        case MPD26Constants.REC_D:
-            transport.record();
-            break;
-        default:
-            // f047007841000204 -> this part goes: 14f7
-            var controllerid = data.substring(0, 16);
-            var valuehex = data.substring(16, 18);
-            var valuedec = parseInt(valuehex, 16);
-            //println("controller: " + controllerid + " Value: " +valuehex + "(" + valuedec + ")");
-            //getMacro(1);
-            switch (controllerid) {
+  switch (data) {
+      case MPD26Constants.PLAY_D:
+          transport.play();
+          break;
+      case MPD26Constants.STOP_D:
+          transport.stop();
+          break;
+      case MPD26Constants.FFW_D:
+          transport.fastForward();
+          break;
+      case MPD26Constants.FBW_D:
+          transport.rewind();
+          break;
+      case MPD26Constants.REC_D:
+          transport.record();
+          break;
+      default:
+          p("Not mapped Sysex message: " + data);
+          break;
+  }
+}
+
+function onMidi(status, data1, data2) {
+    p("Midi: " + data1 + " Value: "+ data2);
+    if (isChannelController(status)) {
+            var index = data1;
+            var valuedec = data2; //parseInt(valuehex, 16);
+            //var controllerid = data.substring(0, 16);
+            //var valuehex = data.substring(16, 18);
+            switch (data1) {
+                // Push buttons
                 case MPD26Constants.K1:
                     controlmacro(0, Statebank.K1, valuedec);
                     break;
@@ -176,22 +164,16 @@ function onSysex(data) {
                     controlmacro(5, Statebank.K6, valuedec);
                     break;
                 default:
+                    userControls.getControl(index).set(data2, 128);
                     break;
-            }
-            // Ignore
-    }
-}
-
-function onMidi(status, data1, data2) {
-    p("Midi: " + data1);
-    if (isChannelController(status)) {
-        if (data1 >= LOWEST_CC && data1 <= HIGHEST_CC) {
-            var index = data1 - LOWEST_CC;
-            userControls.getControl(index).set(data2, 128);
+                }
         }
     }
-}
 
+function t(value, length)
+{
+    p("selected");
+}
 
 // START MAIN
 function init() {
